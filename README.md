@@ -1,2 +1,2 @@
-# frostshoxx-rust-redis-tts
+# frostshoxx-rust-reddit-tts
 Reddit TTS Reader using Rust
