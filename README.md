@@ -1,2 +1,2 @@
 # frostshoxx-rust-redis-tts
-Redis TTS Reader using Rust
+Reddit TTS Reader using Rust
