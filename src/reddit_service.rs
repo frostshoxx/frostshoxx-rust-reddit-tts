@@ -38,7 +38,7 @@ impl RedditService {
             }
         }
 
-        println!("📖 Found {} thread titles. Starting text-to-speech...\n", titles.len());
+        println!("Found {} thread titles. Starting text-to-speech...\n", titles.len());
 
         // Initialize TTS
         let mut tts = Tts::default()?;
@@ -62,7 +62,7 @@ impl RedditService {
             thread::sleep(Duration::from_millis(1000));
         }
 
-        println!("\n✅ Finished reading all threads!");
+        println!("\nFinished reading all threads!");
 
         // Ending message
         let ending = format!("That's all for now. You have heard the top {} threads from Reddit. 
