@@ -40,7 +40,7 @@ impl Application for App {
     }
 
     fn title(&self) -> String {
-        String::from("Reddit TTS")
+        String::from("Reddit Top 10 Threads Reader")
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
