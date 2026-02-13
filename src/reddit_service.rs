@@ -1,22 +1,19 @@
 use reqwest::Client;
 use serde_json::Value;
-use crate::tts_service::TtsService;
 use crate::dto::{RedditPost, RedditPostsDTO};
 
 pub struct RedditService {
     client: Client,
-    tts: TtsService,
 }
 
 impl RedditService {
     pub fn new() -> Self {
         Self {
             client: Client::new(),
-            tts: TtsService::new(),
         }
     }
 
-    pub async fn fetch_and_speak_top_threads(&self) -> Result<RedditPostsDTO, Box<dyn std::error::Error>> {
+    pub async fn fetch_top_threads(&self) -> Result<RedditPostsDTO, Box<dyn std::error::Error>> {
         // Fetch top posts from Reddit
         let url = "https://www.reddit.com/r/popular/top.json?limit=10";
         
@@ -48,32 +45,6 @@ impl RedditService {
             };
             posts_dto.add_post(reddit_post);
         }
-
-        println!("Found {} thread titles. Starting text-to-speech...\n", posts_dto.count());
-
-        // Speak introductory message
-        let intro = format!("Hello! Here are the top {} threads from Reddit.", posts_dto.count());
-        self.tts.speak_text(&intro)?;
-        
-        // Brief pause before start reading the threads
-        self.tts.pause_between(1000);
-
-        // Read each title via TTS
-        for (index, post) in posts_dto.posts.iter().enumerate() {
-            println!("[{}/{}] Speaking: {}", index + 1, posts_dto.count(), post.title);
-            let speech = format!("Thread {}: {}. Posted by {}.", 
-                index + 1, post.title, post.author,);
-            self.tts.speak_text(&speech)?;
-            
-            // Brief pause between titles
-            self.tts.pause_between(1000);
-        }
-
-        println!("\nFinished reading all threads!");
-
-        // Ending message
-        let ending = format!("That's all for now. You have heard the top {} threads from Reddit. Goodbye!", posts_dto.count());
-        self.tts.speak_text(&ending)?;
 
         Ok(posts_dto)
     }
