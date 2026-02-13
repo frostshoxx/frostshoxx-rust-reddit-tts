@@ -1,3 +1,4 @@
+mod dto;
 mod reddit_service;
 mod tts_service;
 
