@@ -16,7 +16,7 @@ impl RedditService {
         }
     }
 
-    pub async fn fetch_and_speak_top_threads(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn fetch_and_speak_top_threads(&self) -> Result<RedditPostsDTO, Box<dyn std::error::Error>> {
         // Fetch top posts from Reddit
         let url = "https://www.reddit.com/r/popular/top.json?limit=10";
         
@@ -75,6 +75,6 @@ impl RedditService {
         let ending = format!("That's all for now. You have heard the top {} threads from Reddit. Goodbye!", posts_dto.count());
         self.tts.speak_text(&ending)?;
 
-        Ok(())
+        Ok(posts_dto)
     }
 }
