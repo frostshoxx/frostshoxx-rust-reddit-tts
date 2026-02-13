@@ -3,9 +3,6 @@ use serde_json::Value;
 use tts::Tts;
 use std::thread;
 use std::time::Duration;
-use tokio::sync::watch;
-
-pub use crate::ThreadData;
 
 pub struct RedditService {
     client: Client,
@@ -18,7 +15,7 @@ impl RedditService {
         }
     }
 
-    pub async fn fetch_and_speak_top_threads_with_pause(&self, paused_rx: watch::Receiver<bool>, threads_tx: watch::Sender<Vec<ThreadData>>) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn fetch_and_speak_top_threads(&self) -> Result<(), Box<dyn std::error::Error>> {
         // Fetch top posts from Reddit
         let url = "https://www.reddit.com/r/popular/top.json?limit=10";
         
@@ -31,69 +28,56 @@ impl RedditService {
         let body = response.text().await?;
         let json: Value = serde_json::from_str(&body)?;
 
-        // Extract top 10 thread titles and thumbnails
+        // Extract top 10 thread titles
         let posts = &json["data"]["children"];
-        let mut threads = Vec::new();
+        let mut titles = Vec::new();
 
         for post in posts.as_array().unwrap_or(&vec![]) {
             if let Some(title) = post["data"]["title"].as_str() {
-                let thumbnail = post["data"]["thumbnail"]
-                    .as_str()
-                    .unwrap_or("default")
-                    .to_string();
-                threads.push(ThreadData {
-                    title: title.to_string(),
-                    thumbnail,
-                });
+                titles.push(title.to_string());
             }
         }
 
-        println!("Found {} thread titles. Starting text-to-speech...\n", threads.len());
+        println!("Found {} thread titles. Starting text-to-speech...\n", titles.len());
 
-        // Send threads data to GUI
-        let _ = threads_tx.send(threads.clone());
+        // Initialize TTS
         let mut tts = Tts::default()?;
         
         // Speak introductory message
-        let intro = format!("Hello! Here are the top {} threads from Reddit.", threads.len());
+        let intro = format!("Hello! Here are the top {} threads from Reddit.", titles.len());
         tts.speak(intro, true)?;
+        
         // Wait until the engine finishes speaking 
         while tts.is_speaking()? { 
-            if *paused_rx.borrow() {
-                tts.stop()?;
-            }
             thread::sleep(Duration::from_millis(100));
         }
-        // brief pause before start reading the threads
+        
+        // Brief pause before start reading the threads
         thread::sleep(Duration::from_millis(1000));
 
         // Read each title via TTS
-        for (index, thread) in threads.iter().enumerate() {
-            println!("[{}/{}] Speaking: {}", index + 1, threads.len(), &thread.title);
-            let speech = format!("Thread {}: {}", index + 1, &thread.title);
+        for (index, title) in titles.iter().enumerate() {
+            println!("[{}/{}] Speaking: {}", index + 1, titles.len(), title);
+            let speech = format!("Thread {}: {}", index + 1, title);
             tts.speak(speech, true)?;
+            
             // Wait until the engine finishes speaking 
             while tts.is_speaking()? { 
-                if *paused_rx.borrow() {
-                    tts.stop()?;
-                }
                 thread::sleep(Duration::from_millis(100));
             }
-            // brief pause between titles
+            
+            // Brief pause between titles
             thread::sleep(Duration::from_millis(1000));
         }
 
         println!("\nFinished reading all threads!");
 
         // Ending message
-        let ending = format!("That's all for now. You have heard the top {} threads from Reddit. 
-            Goodbye!", threads.len());
+        let ending = format!("That's all for now. You have heard the top {} threads from Reddit. Goodbye!", titles.len());
         tts.speak(ending, true)?;
+        
         // Wait until the engine finishes speaking 
         while tts.is_speaking()? { 
-            if *paused_rx.borrow() {
-                tts.stop()?;
-            }
             thread::sleep(Duration::from_millis(100));
         }
 
