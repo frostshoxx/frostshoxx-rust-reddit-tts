@@ -1,17 +1,17 @@
 use reqwest::Client;
 use serde_json::Value;
-use tts::Tts;
-use std::thread;
-use std::time::Duration;
+use crate::tts_service::TtsService;
 
 pub struct RedditService {
     client: Client,
+    tts: TtsService,
 }
 
 impl RedditService {
     pub fn new() -> Self {
         Self {
             client: Client::new(),
+            tts: TtsService::new(),
         }
     }
 
@@ -40,49 +40,29 @@ impl RedditService {
 
         println!("Found {} thread titles. Starting text-to-speech...\n", titles.len());
 
-        // Initialize TTS
-        let mut tts = Tts::default()?;
-        
         // Speak introductory message
         let intro = format!("Hello! Here are the top {} threads from Reddit.", titles.len());
-        tts.speak(intro, true)?;
-        
-        // Wait until the engine finishes speaking 
-        while tts.is_speaking()? { 
-            thread::sleep(Duration::from_millis(100));
-        }
+        self.tts.speak_text(&intro)?;
         
         // Brief pause before start reading the threads
-        thread::sleep(Duration::from_millis(1000));
+        self.tts.pause_between(1000);
 
         // Read each title via TTS
         for (index, title) in titles.iter().enumerate() {
             println!("[{}/{}] Speaking: {}", index + 1, titles.len(), title);
             let speech = format!("Thread {}: {}", index + 1, title);
-            tts.speak(speech, true)?;
-            
-            // Wait until the engine finishes speaking 
-            while tts.is_speaking()? { 
-                thread::sleep(Duration::from_millis(100));
-            }
+            self.tts.speak_text(&speech)?;
             
             // Brief pause between titles
-            thread::sleep(Duration::from_millis(1000));
+            self.tts.pause_between(1000);
         }
 
         println!("\nFinished reading all threads!");
 
         // Ending message
         let ending = format!("That's all for now. You have heard the top {} threads from Reddit. Goodbye!", titles.len());
-        tts.speak(ending, true)?;
-        
-        // Wait until the engine finishes speaking 
-        while tts.is_speaking()? { 
-            thread::sleep(Duration::from_millis(100));
-        }
+        self.tts.speak_text(&ending)?;
 
-        // Clean up TTS resources
-        tts.stop()?;
         Ok(())
     }
 }

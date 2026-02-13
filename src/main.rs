@@ -1,4 +1,5 @@
 mod reddit_service;
+mod tts_service;
 
 use reddit_service::RedditService;
 
